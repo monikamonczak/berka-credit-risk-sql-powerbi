@@ -6,7 +6,7 @@ This SQL and Power BI case study analyses the loan portfolio of a Czech bank, th
 
 The analysis covers:
 
-- **682 loans** granted between **1993 and 1998**,
+- **682 loans** granted between **July 1993 and December 1998**,
 - **4,500 accounts** and **5,369 clients**,
 - **1,056,320 transactions**,
 - **77 districts** grouped into **8 regions**.
@@ -23,7 +23,7 @@ The analysis covers:
 - type and date conversion (`TRY_CAST`, `TRY_CONVERT`),
 - date arithmetic (`DATEADD`, `DATEDIFF`),
 - window functions (`PERCENTILE_CONT`, `SUM() OVER`),
-- subqueries and temporary tables,
+- subqueries,
 - data quality checks and reconciliation queries.
 
 **Power BI techniques:**
@@ -99,7 +99,7 @@ The pre-loan view was verified with an independent query on raw transactions: th
 | C | 403 | Running, no problems |
 | D | 45 | Running, in debt |
 
-**76 of 682 loans (11.1%)** are problem loans. The figure is probably an underestimate: **448 loans (65.7%) are still running** (statuses C and D), so their final outcome is unknown. Among finished loans only, **31 of 234 (13.2%)** were not repaid.
+**76 of 682 loans (11.1%)** are problem loans. The figure is probably an underestimate: **448 loans (65.7%) are still running** (statuses C and D), so their final outcome is unknown (according to the dataset's documentation, a loan whose term ends on or after 1 January 1999 counts as unfinished). Among finished loans only, **31 of 234 (13.2%)** were not repaid.
 
 Loans were issued mostly in the second half of the period: 20 in 1993 (the first loan is from July), 101 in 1994, 90 in 1995, 117 in 1996, 196 in 1997 and 158 in 1998.
 
@@ -131,7 +131,7 @@ For every loan I measured the account in the six months before the loan date (th
 
 Clients whose loans ended unpaid (B) had an average minimum balance about 2.5 times lower than clients who repaid (A), and clients in debt (D) about 3.9 times lower than clients with running loans without problems (C). The inflow-to-outflow ratio is not a convincing signal: A and B look the same, and only D is lower.
 
-**The risk rises below roughly 10,000 CZK.**
+**The risk rises below roughly 10,000.**
 
 | Minimum balance in the 6 months before the loan | Loans | Problem loans | Problem loan rate |
 |-------------------------------------------------|------:|--------------:|------------------:|
@@ -140,7 +140,7 @@ Clients whose loans ended unpaid (B) had an average minimum balance about 2.5 ti
 | 10k - 20k   | 218 | 7  | 3.2%  |
 | 20k and more| 255 | 8  | 3.1%  |
 
-Above 10,000 CZK the rate is low and flat (about 3%). Below 5,000 CZK it is about 17 times higher than in the highest band.
+Above 10,000 the rate is low and flat (about 3%). Below 5,000 it is about 17 times higher than in the highest band.
 
 **Loan size does not explain the effect.** Loans in the lowest balance bands are also larger, so I checked loan size separately:
 
@@ -153,20 +153,20 @@ In both loan-size groups a low minimum balance goes with many more problem loans
 
 **Loans excluded from this analysis.** 85 loans lack a full pre-loan history; 15 of them (17.6%) are problem loans, against 10.2% in the analysed group. The group is small, so this is a signal and not a finding.
 
-The analysis respects the temporal constraint: only transactions dated before the loan are used. The maintainers of the dataset note that if temporal constraints are ignored, good and bad loans can be separated almost perfectly by a simple rule on the minimum balance over the entire account history ([CTU Relational Learning Repository](https://relational.fel.cvut.cz/dataset/Financial))[cite: 7]. Because this analysis strictly uses pre-loan transactions, it avoids data leakage, while the full-history segmentation is intentionally kept as descriptive only.
+The analysis respects the temporal constraint: only transactions dated before the loan are used. The maintainers of the dataset note that if this constraint is ignored, a simple rule on the minimum balance over the whole account history separates good loans from bad ones perfectly ([CTU Relational Repository](https://relational.fel.cvut.cz/dataset/Financial)). Using only pre-loan transactions avoids that form of leakage, while the full-history segmentation is kept descriptive only.
 
 ### 3. Customer segments
 
-Segments are rule-based and use two axes: average monthly inflow (low below 7,000 CZK, medium up to 21,000 CZK, high above; rounded 33rd and 67th percentiles, 7,081 and 21,266, median 14,425) and payment style (**Cash-heavy** when at least 75% of outflows are cash withdrawals, otherwise **Mixed**).
+Segments are rule-based and use two axes: average monthly inflow (low below 7,000, medium up to 21,000, high above; rounded 33rd and 67th percentiles, 7,081 and 21,266, median 14,425) and payment style (**Cash-heavy** when at least 75% of outflows are cash withdrawals, otherwise **Mixed**).
 
 | Segment | Accounts | Share | Avg monthly inflow | Cash share of outflows | Loans | Problem loan rate |
 |---------|---------:|------:|-------------------:|-----------------------:|------:|------------------:|
-| Low inflow / Cash-heavy    | 235   | 5.2%  | 4,347 CZK  | 98.2% | 1   | n < 30 |
-| Low inflow / Mixed         | 1,238 | 27.5% | 4,908 CZK  | 45.0% | 7   | n < 30 |
-| Medium inflow / Cash-heavy | 512   | 11.4% | 14,499 CZK | 93.7% | 58  | 27.6%  |
-| Medium inflow / Mixed      | 987   | 21.9% | 13,759 CZK | 55.7% | 150 | 4.7%   |
-| High inflow / Cash-heavy   | 1,071 | 23.8% | 34,696 CZK | 90.4% | 304 | 14.1%  |
-| High inflow / Mixed        | 457   | 10.2% | 27,967 CZK | 66.4% | 162 | 6.2%   |
+| Low inflow / Cash-heavy    | 235   | 5.2%  | 4,347  | 98.2% | 1   | n < 30 |
+| Low inflow / Mixed         | 1,238 | 27.5% | 4,908  | 45.0% | 7   | n < 30 |
+| Medium inflow / Cash-heavy | 512   | 11.4% | 14,499 | 93.7% | 58  | 27.6%  |
+| Medium inflow / Mixed      | 987   | 21.9% | 13,759 | 55.7% | 150 | 4.7%   |
+| High inflow / Cash-heavy   | 1,071 | 23.8% | 34,696 | 90.4% | 304 | 14.1%  |
+| High inflow / Mixed        | 457   | 10.2% | 27,967 | 66.4% | 162 | 6.2%   |
 
 Observations:
 
@@ -203,7 +203,7 @@ Design decisions:
 
 ## Recommendations
 
-1. **Use the minimum balance before the loan as a screening signal.** Clients who dropped below about 10,000 CZK in the six months before applying deserve a closer review, especially for loans of 150k CZK or more.
+1. **Use the minimum balance before the loan as a screening signal.** Clients who dropped below about 10,000 in the six months before applying deserve a closer review, especially for loans of 150k or more.
 2. **Combine balance with loan size.** A low balance together with a large loan had the highest problem rate (50.8%).
 3. **Re-evaluate once running loans finish.** Statuses C and D cover two thirds of the portfolio, so the final problem rate and the regional differences may change.
 4. **Treat regional differences as leads, not conclusions.** North Moravia, south Bohemia and west Bohemia are candidates for further review; north Bohemia's very low rate rests on one problem loan.
@@ -213,14 +213,14 @@ Design decisions:
 ## Analytical assumptions and limitations
 
 - **Small samples.** There are only 76 problem loans (61 in the pre-loan analysis). Group comparisons, especially by region and in the lowest balance band, are directional rather than statistically robust.
-- **Exploratory analysis.** The thresholds (5k, 10k, 20k CZK for balance, 150k CZK for loan size, 7,000 and 21,000 CZK for inflow, 75% for cash share) were chosen after looking at the data, and no statistical test was applied.
+- **Exploratory analysis.** The thresholds (5k, 10k, 20k for balance, 150k for loan size, 7,000 and 21,000 for inflow, 75% for cash share) were chosen after looking at the data, and no statistical test was applied.
 - **Association, not causation.** A low balance and repayment problems may share a cause, such as low income.
-- **Problem loan definition.** B and D together follow the dataset's good/bad grouping (606 versus 76 loans). Status D loans are still running, so their outcome is not final. A comparison of finished loans only (A against B) is shown separately.
+- **Problem loan definition.** B and D together follow the dataset's good/bad grouping (606 versus 76 loans). Status D loans are still running, so their outcome is not final. A comparison of finished loans only (A against B, the standard task for this dataset) is shown separately.
 - **Balance metrics are based on balances after each transaction,** not daily balances, so averages give more weight to days with many transactions.
 - **Inflows include interest credits** (0.85% of inflow value).
 - **Regions are based on the district of the loan owner,** not the branch.
 - **Segments use the whole account history** and are descriptive only when combined with loan outcomes.
-- **Historical data from 1993 to 1998.** The results describe this bank in this period and are not a view of today's market. Amounts are in Czech Koruna (CZK).
+- **Historical data from 1993 to 1998.** The results describe this bank in this period and are not a view of today's market. Amounts are in the dataset's currency units (CZK assumed; the documentation consulted does not state the currency).
 
 ## Next steps
 
@@ -229,3 +229,36 @@ Design decisions:
 - Compare the results for finished loans only (A against B) with the B and D definition.
 
 ## Repository structure
+
+```
+berka-credit-risk-sql-powerbi/
+├── README.md
+├── images/
+│   ├── berka_database_ERD.png
+│   ├── dashboard_home.png
+│   ├── dashboard_portfolio.png
+│   ├── dashboard_pre_loan.png
+│   └── dashboard_segments.png
+├── sql/
+│   ├── 01_explore_raw.sql
+│   ├── 02_create_clean_views.sql
+│   ├── 03_check_clean_views.sql
+│   ├── 04_portfolio_and_regions.sql
+│   ├── 05_pre_loan_features.sql
+│   ├── 06_mart_loan_analysis.sql
+│   ├── 07_pre_loan_analysis.sql
+│   ├── 08_customer_behaviour.sql
+│   ├── 09_customer_segments.sql
+│     
+└── powerbi/
+    ├── Berka.pbix
+    └── Berka_dashboard.pdf
+```
+
+Run the SQL scripts in numeric order after importing the eight source files into the database (`dbo` schema). The `exploration` folder keeps the step-by-step work log; it is superseded by the numbered scripts.
+
+## Data source
+
+[Financial dataset (PKDD'99 Discovery Challenge, Petr Berka) in the CTU Relational Learning Repository](https://relational.fel.cvut.cz/dataset/Financial)
+
+The dataset contains real, anonymised data from a Czech bank. The source data is not included in this repository; please check the terms of use of the source before redistributing it.
